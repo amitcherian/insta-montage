@@ -1,6 +1,5 @@
 package insta_montage;
 
-import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.plugin.PlugIn;
@@ -11,28 +10,18 @@ public class Main implements PlugIn {
     static final String VERSION = "0.0.1";
 
     public void run(String arg) {
-        // Check that there are at least 2 images open
+        // Collect currently open images (may be empty - that's OK)
         int[] imageIDs = WindowManager.getIDList();
-        if (imageIDs == null || imageIDs.length < 2) {
-            IJ.error(PLUGIN_NAME, "Please open at least 2 images before running Insta Montage.");
-            return;
+        ImagePlus[] images = new ImagePlus[0];
+        if (imageIDs != null) {
+            images = new ImagePlus[imageIDs.length];
+            for (int i = 0; i < imageIDs.length; i++) {
+                images[i] = WindowManager.getImage(imageIDs[i]);
+            }
         }
 
-        // Collect open images
-        ImagePlus[] images = new ImagePlus[imageIDs.length];
-        for (int i = 0; i < imageIDs.length; i++) {
-            images[i] = WindowManager.getImage(imageIDs[i]);
-        }
-
-        // Launch the settings dialog
+        // Launch the persistent dialog
         MontageDialog dialog = new MontageDialog(PLUGIN_NAME, VERSION, images);
-        dialog.show();
-
-        // If user clicked OK, run the montage
-        if (!dialog.wasCanceled()) {
-            MontageSettings settings = dialog.getSettings();
-            MontageProcessor processor = new MontageProcessor(images, settings);
-            processor.run();
-        }
+        dialog.display();
     }
 }
