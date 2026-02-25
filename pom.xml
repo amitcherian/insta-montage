@@ -2,15 +2,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>sc.fiji</groupId>
-		<artifactId>pom-fiji</artifactId>
-		<version>17.0.0</version>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>37.0.0</version>
 		<relativePath />
-	</parent> 
-    <version>0.0.2</version>		<!-- Change -->
+	</parent>
+    <version>0.0.1</version>		<!-- Change -->
  
- 	<url>https://github.com/sRassmann/PluginTemplate</url>		<!-- Change -->
-	<inceptionYear>2020</inceptionYear>
+ 	<url>https://github.com/amitcherian/insta-montage</url>		<!-- Change -->
+	<inceptionYear>2026</inceptionYear>
 		
 	<licenses>
 		<license>
@@ -19,15 +19,28 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-	
+	<organization>
+		<name>LIC-Leiden University</name>
+		<url>https://www.universiteitleiden.nl</url>
+	</organization>
+
+	<scm>
+		<connection>scm:git:git://github.com/amitcherian/insta-montage.git</connection>
+		<developerConnection>scm:git:ssh://github.com/amitcherian/insta-montage.git</developerConnection>
+		<url>https://github.com/amitcherian/insta-montage</url>
+	</scm>
+
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/amitcherian/insta-montage/issues</url>
+	</issueManagement>
 	<developers>            
             <developer>
             <id></id>
-            <name>Sebastian Raßmann</name>
-            <email>rassmann@uni-bonn.de</email>
+            <name>Amit Cherian</name>
+            <email>a.cherian@lic.leidenuniv.nl</email>
             <url>r</url>
-            <organization></organization>
-            <organizationUrl></organizationUrl>
+            
             <roles>
                 <role>founder</role>
                 <role>lead</role>
@@ -58,16 +71,16 @@
  	
  	<properties>
 		<main-class>Main</main-class>
-		<package-name>plugin_Name</package-name> 		<!-- Change -->
+		<package-name>Insta_Montage</package-name> 		<!-- Change -->
 		<license.licenseName>gpl_v3</license.licenseName>
-		<license.copyrightOwners>Sebastian Raßmann, Jan N. Hansen</license.copyrightOwners>	
+		<license.copyrightOwners>Amit Cherian</license.copyrightOwners>	
 		<additionalparam>-Xdoclint:none</additionalparam>
 	</properties>
  	
  	<repositories>
     	<repository>
             <id>imagej.public</id>
-            <url>http://maven.imagej.net/content/groups/public</url>
+            <url>https://maven.scijava.org/content/groups/public</url>
         </repository>
     </repositories>
  
@@ -106,7 +119,7 @@
 
 		</plugins>
 	</build>  
-    <description>this is just a example plugin to test and demonstrate the compiliation of IJ plugins</description> <!-- Change -->
-    <name>example plugin</name>		<!-- Change -->
-    <artifactId>example_plugin</artifactId>		<!-- Change, NEEDS TO CONTAIN An UNDERSCORE ("_") -->
+    <description>Makes a montage of available images with dynamic border thicknes control</description> <!-- Change -->
+    <name>Insta Montage</name>		<!-- Change -->
+    <artifactId>Insta_Montage</artifactId>		<!-- Change, NEEDS TO CONTAIN An UNDERSCORE ("_") -->
 </project>
