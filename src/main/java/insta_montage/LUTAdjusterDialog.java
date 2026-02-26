@@ -13,6 +13,9 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import ij.CompositeImage;
+import ij.measure.Measurements;
+import ij.process.ImageStatistics;
 
 public class LUTAdjusterDialog extends JFrame {
 
@@ -69,15 +72,25 @@ public class LUTAdjusterDialog extends JFrame {
                 return;
             }
             int channels = imp.getNChannels();
-            int currentChannel = imp.getC();
-            for (int c = 1; c <= channels; c++) {
-                imp.setC(c);
-                ij.process.ImageStatistics stats = imp.getProcessor().getStatistics();
+            if (imp.isComposite()) {
+                CompositeImage ci = (CompositeImage) imp;
+                for (int c = 1; c <= channels; c++) {
+                    int stackIndex = imp.getStackIndex(c, imp.getZ(), imp.getT());
+                    ij.process.ImageProcessor ip = imp.getStack().getProcessor(stackIndex);
+                    ImageStatistics stats = ImageStatistics.getStatistics(
+                        ip, Measurements.MIN_MAX, null);
+                    LUT lut = ci.getChannelLut(c);
+                    lut.min = stats.min;
+                    lut.max = stats.max;
+                    ci.setChannelLut(lut, c);
+                }
+            } else {
+                ij.process.ImageStatistics stats = ImageStatistics.getStatistics(
+                    imp.getProcessor(), Measurements.MIN_MAX, null);
                 imp.getProcessor().setMinAndMax(stats.min, stats.max);
             }
-            imp.setC(currentChannel);
             imp.updateAndDraw();
-            refresh(); // sync sliders to actual computed values
+            refresh();
         });
 
         pack();
@@ -237,11 +250,17 @@ public class LUTAdjusterDialog extends JFrame {
         }
 
         private void applyLUT() {
-            int currentC = imp.getC();
-            imp.setC(channel);
-            imp.getProcessor().setMinAndMax(minSlider.getValue(), maxSlider.getValue());
+            if (imp.isComposite()) {
+                CompositeImage ci = (CompositeImage) imp;
+                LUT lut = ci.getChannelLut(channel);
+                lut.min = minSlider.getValue();
+                lut.max = maxSlider.getValue();
+                ci.setChannelLut(lut, channel);
+            } else {
+                imp.getProcessor().setMinAndMax(
+                    minSlider.getValue(), maxSlider.getValue());
+            }
             imp.updateAndDraw();
-            imp.setC(currentC);
         }
 
         public JPanel getPanel() {
