@@ -7,12 +7,16 @@ import ij.WindowManager;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MontageDialog extends JFrame {
 
     private final String pluginName;
     private final String version;
+
+    // Thumbnail reorder panel
+    private ThumbnailPanel thumbnailPanel;
 
     // Grid
     private JSpinner rowsSpinner;
@@ -56,11 +60,21 @@ public class MontageDialog extends JFrame {
     private void buildUI() {
         setLayout(new BorderLayout(10, 10));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setResizable(false);
+        setResizable(true);
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // --- Thumbnail reorder panel ---
+        thumbnailPanel = new ThumbnailPanel();
+        thumbnailPanel.setOnOrderChanged(this::updateScaleBarCombo);
+        JScrollPane thumbScroll = new JScrollPane(thumbnailPanel,
+            JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        thumbScroll.setPreferredSize(new Dimension(400, 120));
+        mainPanel.add(thumbScroll);
+        mainPanel.add(Box.createVerticalStrut(5));
 
         // --- Grid Settings ---
         JPanel gridPanel = createTitledPanel("Grid Settings");
@@ -149,48 +163,75 @@ public class MontageDialog extends JFrame {
         refreshButton.addActionListener(e -> refreshImageList());
 
         makeMontageButton.addActionListener(e -> {
-            // Check images are open
-            int[] imageIDs = WindowManager.getIDList();
-            if (imageIDs == null || imageIDs.length < 2) {
+            List<ImagePlus> orderedImages = thumbnailPanel.getOrderedImages();
+            if (orderedImages.size() < 2) {
                 IJ.error(pluginName, "Please open at least 2 images before making a montage.");
                 return;
             }
-
-            // Collect open images
-            ImagePlus[] images = new ImagePlus[imageIDs.length];
-            for (int i = 0; i < imageIDs.length; i++) {
-                images[i] = WindowManager.getImage(imageIDs[i]);
-            }
-
-            // Build settings from UI
-            MontageSettings settings = getSettings();
-
-            // Run processor
-            MontageProcessor processor = new MontageProcessor(images, settings);
+            MontageSettings settings = getSettings(orderedImages);
+            MontageProcessor processor = new MontageProcessor(
+                orderedImages.toArray(new ImagePlus[0]), settings);
             processor.run();
         });
 
         add(mainPanel, BorderLayout.CENTER);
         pack();
-        setLocationRelativeTo(null); // center on screen
+        setLocationRelativeTo(null);
     }
-
-    public void refreshImageList() {
+    private void updateScaleBarCombo() {
+        List<ImagePlus> ordered = thumbnailPanel.getOrderedImages();
+        String currentSelection = (String) scaleBarImageCombo.getSelectedItem();
         scaleBarImageCombo.removeAllItems();
-        int[] imageIDs = WindowManager.getIDList();
-        if (imageIDs == null || imageIDs.length == 0) {
-            scaleBarImageCombo.addItem("No images open");
-        } else {
-            for (int i = 0; i < imageIDs.length; i++) {
-                ImagePlus imp = WindowManager.getImage(imageIDs[i]);
-                if (imp != null) {
-                    scaleBarImageCombo.addItem((i + 1) + ": " + imp.getTitle());
+        for (int i = 0; i < ordered.size(); i++) {
+            String title = ordered.get(i).getTitle();
+            if (title.contains(".")) title = title.substring(0, title.lastIndexOf('.'));
+            scaleBarImageCombo.addItem((i + 1) + ": " + title);
+        }
+        // Try to reselect the same image by name if possible
+        if (currentSelection != null) {
+            String currentName = currentSelection.contains(": ") 
+                ? currentSelection.substring(currentSelection.indexOf(": ") + 2) 
+                : currentSelection;
+            for (int i = 0; i < scaleBarImageCombo.getItemCount(); i++) {
+                String item = scaleBarImageCombo.getItemAt(i);
+                if (item.endsWith(currentName)) {
+                    scaleBarImageCombo.setSelectedIndex(i);
+                    break;
                 }
             }
         }
     }
+    public void refreshImageList() {
+        int[] imageIDs = WindowManager.getIDList();
+        List<ImagePlus> images = new ArrayList<>();
+        if (imageIDs != null) {
+            for (int id : imageIDs) {
+                ImagePlus imp = WindowManager.getImage(id);
+                if (imp != null) images.add(imp);
+            }
+        }
 
-    private MontageSettings getSettings() {
+        // Update thumbnail panel
+        thumbnailPanel.setImages(images);
+        thumbnailPanel.revalidate();
+        thumbnailPanel.repaint();
+
+        // Update scale bar image combo
+        scaleBarImageCombo.removeAllItems();
+        if (images.isEmpty()) {
+            scaleBarImageCombo.addItem("No images open");
+        } else {
+            for (int i = 0; i < images.size(); i++) {
+                String title = images.get(i).getTitle();
+                if (title.contains(".")) title = title.substring(0, title.lastIndexOf('.'));
+                scaleBarImageCombo.addItem((i + 1) + ": " + title);
+            }
+        }
+
+        pack();
+    }
+
+    private MontageSettings getSettings(List<ImagePlus> orderedImages) {
         MontageSettings settings = new MontageSettings();
         settings.rows = (int) rowsSpinner.getValue();
         settings.cols = (int) colsSpinner.getValue();
@@ -225,6 +266,6 @@ public class MontageDialog extends JFrame {
     }
 
     public void display() {
-    setVisible(true);
-}
+        setVisible(true);
+    }
 }
