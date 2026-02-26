@@ -8,6 +8,14 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+
 public class MontageProcessor {
 
     private final ImagePlus[] images;
@@ -64,7 +72,11 @@ public class MontageProcessor {
             int y = row * (tileH + s.borderThickness);
 
             // Convert and resize the tile image
-            ImageProcessor tile = images[i].getProcessor().convertToRGB();
+            ImagePlus source = images[i];
+            if (source.isComposite() || source.getNChannels() > 1) {
+                source = source.flatten();
+            }
+            ImageProcessor tile = source.getProcessor().convertToRGB();
             if (tile.getWidth() != tileW || tile.getHeight() != tileH) {
                 tile = tile.resize(tileW, tileH, true);
             }
@@ -88,6 +100,7 @@ public class MontageProcessor {
         // Show result as a new image window
         ImagePlus result = new ImagePlus("Insta Montage", canvas);
         result.show();
+        copyToClipboard(canvas);
     }
 
     private void drawLabel(ColorProcessor canvas, String text,
@@ -191,5 +204,25 @@ public class MontageProcessor {
             ? y + barHeight + fontSize + 2
             : y - 4;
         canvas.drawString(label, labelX, labelY);
+    }
+    private void copyToClipboard(ColorProcessor cp) {
+        BufferedImage bi = new BufferedImage(cp.getWidth(), cp.getHeight(), BufferedImage.TYPE_INT_RGB);
+        bi.getGraphics().drawImage(cp.createImage(), 0, 0, null);
+
+        Transferable transferable = new Transferable() {
+            public DataFlavor[] getTransferDataFlavors() {
+                return new DataFlavor[]{DataFlavor.imageFlavor};
+            }
+            public boolean isDataFlavorSupported(DataFlavor flavor) {
+                return DataFlavor.imageFlavor.equals(flavor);
+            }
+            public Object getTransferData(DataFlavor flavor)
+                    throws UnsupportedFlavorException {
+                if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
+                return bi;
+            }
+        };
+
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
     }
 }
